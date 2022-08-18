@@ -1,5 +1,5 @@
-const { offlineFallback, warmStrategyCache } = require('workbox-recipes');
-const { CacheFirst } = require('workbox-strategies');
+const { warmStrategyCache } = require('workbox-recipes');
+const { CacheFirst, StaleWhileRevalidate } = require('workbox-strategies');
 const { registerRoute } = require('workbox-routing');
 const { CacheableResponsePlugin } = require('workbox-cacheable-response');
 const { ExpirationPlugin } = require('workbox-expiration');
@@ -27,5 +27,18 @@ warmStrategyCache({
 registerRoute(({ request }) => request.mode === 'navigate', pageCache);
 
 // TODO: Implement asset caching
-//I don't know which activity this is in but I want to remember to come and fix this
-registerRoute();
+registerRoute(
+   // Here we define the callback function that will filter the requests we want to cache (in this case, JS and CSS files)
+   ({ request }) => ['style', 'script', 'worker'].includes(request.destination),
+   new StaleWhileRevalidate({
+     // Name of the cache storage.
+     cacheName: 'asset-cache',
+     plugins: [
+       // This plugin will cache responses with these headers to a maximum-age of 30 days
+       new CacheableResponsePlugin({
+         statuses: [0, 200],
+       }),
+     ],
+   })
+);
+//this was fromt the mini project. Stale while revalidate is not imported, but offline fallback is, and i don't know what either means
